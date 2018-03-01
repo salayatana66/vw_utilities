@@ -1,0 +1,12 @@
+# represents a weight
+class Weight:
+    def __init__(self, name, weight):
+        self.name = name
+        self.weight = weight
+
+
+# to represent categorical vs numerical features
+class FeaType:
+    categorical = 0
+    numerical = 1
+
