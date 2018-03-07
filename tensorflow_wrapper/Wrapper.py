@@ -1,6 +1,8 @@
 import tensorflow as tf
 import pandas as pd
 import re
+import six
+from functools import reduce
 
 # represents a weight
 class Weight:
@@ -68,8 +70,8 @@ class VowpalWabbitWrapper:
         
         tensorDict["Input"] = {}
         # create input tensors
-        for namespace, features in self.feaDict.iteritems():
-            for  feaname, featype in features.iteritems():
+        for namespace, features in six.iteritems(self.feaDict):
+            for  feaname, featype in six.iteritems(features):
                 if featype is FeaType.categorical:
                     # note how use re to cleanup feature names to avoid errors
                     tensorDict["Input"].update({feaname :
@@ -83,8 +85,8 @@ class VowpalWabbitWrapper:
                     
         # create parsed input: i.e. to lookup the value in the weights table
         tensorDict["ParsedInput"] = {}
-        for namespace, features in self.feaDict.iteritems():
-            for feaname, featype in features.iteritems():
+        for namespace, features in six.iteritems(self.feaDict):
+            for feaname, featype in six.iteritems(features):
                 if featype is FeaType.categorical:
                     tensorDict["ParsedInput"].update({feaname :
                                               tf.string_join([tf.constant(namespace+'^'+feaname+'=',dtype=tf.string),tensorDict["Input"][feaname]],
@@ -94,8 +96,8 @@ class VowpalWabbitWrapper:
                                                       tf.constant(namespace+'^'+feaname,dtype=tf.string)})
         # extract weight(s) values (multiplied by feature value for numerical features)
         tensorDict["Values"] = {}
-        for namespace, features in self.feaDict.iteritems():
-            for feaname, featype in features.iteritems():
+        for namespace, features in six.iteritems(self.feaDict):
+            for feaname, featype in six.iteritems(features):
                 if featype is FeaType.categorical:
                     tensorDict["Values"].update({feaname : self.weightsTensor.lookup(tensorDict["ParsedInput"][feaname])})
                 elif featype is FeaType.numerical:
@@ -114,7 +116,7 @@ class VowpalWabbitWrapper:
         # create tensors representing interactions
         tensorDict["ParsedInteractions"] = {}
         tensorDict["InteractionValues"] = {}
-        for interaction, namespaces in interactionsDict.iteritems():
+        for interaction, namespaces in six.iteritems(interactionsDict):
             tensorDict["ParsedInteractions"][interaction] = {}
             tensorDict["InteractionValues"][interaction] = {}
             # create programmatically lists of features to interact
@@ -122,13 +124,13 @@ class VowpalWabbitWrapper:
             for namespace in namespaces:
                 feasList.append([[{"namespace" : namespace,
                                    "feaname" : k,
-                                   "featype": t}] for k,t in self.feaDict[namespace].iteritems()])
+                                   "featype": t}] for k,t in six.iteritems(self.feaDict[namespace])])
             feasToInteract = reduce(VowpalWabbitWrapper.crossProductLists,feasList)
             # for each interaction create tag & name_value
             for fealist in feasToInteract:
                 tag = reduce(lambda y,z : y+'*'+z,map(lambda x: x["feaname"], fealist))
                 tensorDict["ParsedInteractions"][interaction][tag] = tf.string_join(
-                    map(lambda x: tensorDict["ParsedInput"][x["feaname"]],fealist),'*')
+                    list(map(lambda x: tensorDict["ParsedInput"][x["feaname"]],fealist)),'*')
                 # first map categoricals to 1 & others to their value
                 tensorDict["InteractionValues"][interaction][tag] = reduce(lambda x,y : tf.multiply(x,y),
                                                                            map(
