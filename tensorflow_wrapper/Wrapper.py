@@ -21,22 +21,22 @@ class FeaType:
     
 # the wrapper
 class VowpalWabbitWrapper:
+
+    """Loads weights from a file; NO header
+    Separator can be customized but file supposed to have structure:
+
+    col 1 => name
+    col 2 => hash
+    col 3 => weightValue
+
+    
     """
-    to import weights from a csv/tsv
-    """
-    @staticmethod
-    def importWeights(fileName, header=True, sep = '\t'):
-        weightsList = []
-        with open(fileName,'rt') as wf:
-            headIdx = 0
-            for line in wf:
-                if ((not header) or (headIdx > 0) ):
-                    _name, _, _weight = line.strip().split('\t')
-                    weightsList.append(Weight(_name,float(_weight)))
-                else:
-                    headIdx += 1
-                    
-        return weightsList
+    def loadWeightsFromFile(self, weightsFile, sep = '\t'): 
+        self.weightsTensor = tf.contrib.lookup.HashTable(
+            tf.contrib.lookup.TextFileInitializer(weightsFile,
+                                                  tf.string, 0, tf.float64, 2, delimiter = sep
+                                                ),
+                                                           default_value = 0.0)
 
     """
     feaDict => dictionary of features: keys are namespaces,
@@ -46,19 +46,21 @@ class VowpalWabbitWrapper:
 
     interactionString => string, e.g. "a*b,a*b*c"
     """
-    def __init__(self, feaDict, weightsList, interactionsString = None):
+    def __init__(self, feaDict, interactionsString = None):
         self.feaDict = feaDict
         self.interactionsString = interactionsString
 
-        self.weightsTensor = tf.contrib.lookup.HashTable(
-            tf.contrib.lookup.KeyValueTensorInitializer([w.name for w in weightsList],
-                                                [w.weight for w in weightsList],
-                                                            key_dtype=tf.string,
-                                                        value_dtype=tf.float64),
-                                                           default_value = 0.0)
+        self.weightsTensor = None
+        # self.weightsTensor = tf.contrib.lookup.HashTable(
+        #     tf.contrib.lookup.KeyValueTensorInitializer([w.name for w in weightsList],
+        #                                         [w.weight for w in weightsList],
+        #                                                     key_dtype=tf.string,
+        #                                                 value_dtype=tf.float64),
+        #                                                    default_value = 0.0)
         
 
     def wrapModel(self):
+        assert self.weightsTensor is not None
         # dict of all tensors to be returned
         tensorDict = {}
         # instantiate the most important tensor: the response
