@@ -33,15 +33,19 @@ In this repo I plan to add utilities to work with
   ```
   from tensorflow_wrapper.Wrapper import FeaType as fT, VowpalWabbitWrapper as WP
   ```
-  *. Step 2: Create a nested dictionary of namespace, interactin and category type, e.g.
+  * Step 2: Create a nested dictionary of namespace, features and category type, e.g.
   ```
   feaDict = {"a" : { "a1" : fT.numerical, "a2" : fT.categorical},
   	  "b" : {"b1" : fT.categorical} }
-	  ```
+
+  ```
+  
   * Step 3: instantiate the wrapper, e.g.:
+  
   ```
   myWrapper = WP(feaDict, interactionsString="a*b,a*a")
   ```
+  
   * Step4: load the weights from a file, and wrap
   ```
   myWrapper.loadWeightsFromFile("file.tsv")
