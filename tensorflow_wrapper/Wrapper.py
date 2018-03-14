@@ -4,15 +4,6 @@ import re
 import six
 from functools import reduce
 
-# represents a weight
-class Weight:
-    def __init__(self, name, weight):
-        self.name = name
-        self.weight = weight
-
-    def __str__(self):
-        return self.name + " :: " + str(self.weight)
-
 # to represent categorical vs numerical features
 class FeaType:
     categorical = 0
@@ -22,7 +13,7 @@ class FeaType:
 # the wrapper
 class VowpalWabbitWrapper:
 
-    """Loads weights from a file; NO header
+    """Loads weights from a file; NO header allowed
     Separator can be customized but file supposed to have structure:
 
     col 1 => name
@@ -42,24 +33,17 @@ class VowpalWabbitWrapper:
     feaDict => dictionary of features: keys are namespaces,
     values are dictionaries on {feaname : FeaType}
     
-    weightsList => list of weights
-
-    interactionString => string, e.g. "a*b,a*b*c"
+    interactionString => string, e.g. "a*b,a*b*c"; None for no interaction
     """
     def __init__(self, feaDict, interactionsString = None):
         self.feaDict = feaDict
         self.interactionsString = interactionsString
 
         self.weightsTensor = None
-        # self.weightsTensor = tf.contrib.lookup.HashTable(
-        #     tf.contrib.lookup.KeyValueTensorInitializer([w.name for w in weightsList],
-        #                                         [w.weight for w in weightsList],
-        #                                                     key_dtype=tf.string,
-        #                                                 value_dtype=tf.float64),
-        #                                                    default_value = 0.0)
         
 
     def wrapModel(self):
+        # make sure the weightsTensor was initialized
         assert self.weightsTensor is not None
         # dict of all tensors to be returned
         tensorDict = {}
